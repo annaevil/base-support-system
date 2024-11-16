@@ -1,0 +1,34 @@
+services:
+
+  api-service:
+    build:
+      context: api-service
+    volumes:
+      - ./api-service/src/api_service:/app/.venv/lib/python3.11/site-packages/api_service
+      - ./api-service/src/auth:/app/.venv/lib/python3.11/site-packages/auth
+      - ./api-service/src/database:/app/.venv/lib/python3.11/site-packages/database
+      - ./api-service/poetry.lock:/app/poetry.lock
+      - ./api-service/pyproject.toml:/app/pyproject.toml
+      - ./api-service/alembic.ini:/app/alembic.ini
+      - ./api-service/migrations:/app/migrations
+    ports:
+      - 8888:5000
+    command:
+      - "--reload"
+      - "--log-level=debug"
+
+  database:
+    ports:
+      - 5433:5432
+
+  node:
+    ports:
+      - 8082:80
+
+volumes:
+  database:
+    external: false
+
+networks:
+  base_network:
+    external: false

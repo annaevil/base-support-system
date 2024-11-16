@@ -1,0 +1,78 @@
+
+$main-color: #006fc1;
+
+$main-background-color: #fff;
+
+// Кнопки
+$hover-btn-color: #2580c1;
+$border-color: #0b00a6;
+$btn-blue-disabled: #79a3c5;
+
+$btn-gray-color: #d6d7d9;
+$btn-gray2-color: #f0f1f3;
+$btn-gray2-color-hover: #d6d7d9;
+$btn-gray-disabled: #f0f1f3;
+$tabs-color: #28292e;
+
+// Текст
+$text-color-headers: #212227;
+$text-color: #505155;
+$text-light-color: #85868a;
+$green-color: #00b46d;
+$red-color: #fd3e39;
+$red-color-hover: #e10000;
+$yellow-color: #f1a403;
+$white-text-color: #505155;
+
+// Ссылки
+
+$link-color: #1590eb;
+$link-color-hover: #004ea7;
+$gray-link-color-hover: #212227;
+
+$preview-checkbox: '#D6D7D9';
+
+// SVG
+
+$default-svg-color: #85868a;
+$default-svg-color-hover: #212227;
+
+$scrollbar: #9c9c9c;
+
+:root {
+    --main-color: #{$main-color};
+    --main-background-color: #{$main-background-color};
+    --hover-btn-color: #{$hover-btn-color};
+
+    // Кнопки
+    --btn-gray-color: #{$btn-gray-color};
+    --border-color: #{$border-color};
+    --btn-gray2-color: #{$btn-gray2-color};
+    --btn-gray2-color-hover: #{$btn-gray2-color-hover};
+    --btn-blue-disabled: #{$btn-blue-disabled};
+    --btn-gray-disabled: #{$btn-gray-disabled};
+    --tabs-color: #{$tabs-color};
+
+    // Текст
+    --text-color-headers: #{$text-color-headers};
+    --text-color: #{$text-color};
+    --white-text-color: #{$white-text-color};
+    --text-light-color: #{$text-light-color};
+
+    --green-color: #{$green-color};
+    --yellow-color: #{$yellow-color};
+    --red-color: #{$red-color};
+    --red-color-hover: #{$red-color-hover};
+
+    // Ссылки
+
+    --link-color: #{$link-color};
+    --link-color-hover: #{$link-color-hover};
+    --gray-link-color-hover: #{$gray-link-color-hover};
+
+    // SVG
+    --default-svg-color: #{$default-svg-color};
+    --default-svg-color-hover: #{$default-svg-color-hover};
+
+    --scrollbar: #{$scrollbar};
+}

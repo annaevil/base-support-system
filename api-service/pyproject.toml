@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "api-service"
+version = "0.1.0"
+description = ""
+authors = ["igor-grigorev <grigor20130@gmail.com>"]
+readme = "README.md"
+packages = [
+    { from = 'src', include = 'api_service' },
+    { from = 'src', include = 'database' },
+    { from = 'src', include = 'auth' },
+]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = "^0.115.3"
+uvicorn = "^0.32.0"
+alembic = "^1.13.3"
+sqlalchemy = "^2.0.36"
+pydantic = "^2.9.2"
+pydantic-settings = "^2.6.0"
+psycopg2-binary = "^2.9.10"
+asyncpg = "^0.30.0"
+fastapi-users = { extras = ["sqlalchemy"], version = "^13.0.0" }
+sqlmodel = "^0.0.22"
+asyncio = "^3.4.3"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
