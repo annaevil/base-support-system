@@ -1,9 +1,9 @@
-FROM node:20 as build
+FROM node:20-alpine as build
 
 WORKDIR /src
 
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 
 COPY . .
 
@@ -17,7 +17,6 @@ CMD ["npm", "run", "dev"]
 # COPY ./package.json /src/package.json
 # COPY ./package-lock.json /src/package-lock.json
 
-# RUN npm install typescript -g
 # RUN npm install
 
 # COPY . /src
