@@ -5,8 +5,6 @@ from sqlalchemy.orm import (
 from typing import AsyncGenerator
 from sqlalchemy import MetaData
 
-from fastapi import Depends
-from fastapi_users.db import SQLAlchemyUserDatabase, SQLAlchemyBaseUserTableUUID
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 from database.settings import db_settings
@@ -22,14 +20,6 @@ async_session_maker = sessionmaker(engine, class_=AsyncSession, expire_on_commit
 metadata = MetaData()
 
 
-class User(SQLAlchemyBaseUserTableUUID, Base):
-    pass
-
-
 async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
     async with async_session_maker() as session:
         yield session
-
-
-async def get_user_db(session: AsyncSession = Depends(get_async_session)):
-    yield SQLAlchemyUserDatabase(session, User)

@@ -1,10 +1,21 @@
+from datetime import datetime
+
 import uvicorn
-from database.models import User
-from fastapi import FastAPI, Depends
+from database.models import User, Task
+from database.db import get_async_session
+from fastapi import FastAPI, Depends, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
+from sqlalchemy import insert, select, update
+
 from .schemas import (
-    VersionModel
+    VersionModel,
+    TaskModel,
+    TaskResponseModel,
+    UpdateTaskModel
 )
+from .utils import check_user_role
+from typing import List
 
 from auth.schemas import UserCreate, UserRead, UserUpdate
 from auth.base_config import auth_backend, current_active_user, fastapi_users
@@ -72,12 +83,93 @@ async def get_version() -> VersionModel:
 
 @app.get("/protected-route")
 def protected_route(user: User = Depends(current_active_user)):
-    return f"Hello, {user.email}. You are authenticated with a cookie or a JWT."
+    return f"Hello, {user.role_id}. You are authenticated with a cookie or a JWT."
 
 
-@app.get("/protected-route-only-jwt")
-def protected_route(user: User = Depends(current_active_user)):
-    return f"Hello, {user.email}. You are authenticated with a JWT."
+@app.post(
+    "task/create-task",
+    tags=['task'],
+    description='Метод для создания задчи пользователем',
+
+)
+async def create_task(
+        task: TaskModel,
+        user: User = Depends(current_active_user),
+        session: Session = Depends(get_async_session)
+
+) -> TaskResponseModel:
+    if await check_user_role(user.role_id) != 'user':
+        raise HTTPException(status_code=404, detail="only user")
+
+    stmt = insert(Task).returning(Task).values(
+        header=task.header,
+        description=task.description,
+        status='new',
+        created_at=datetime.utcnow(),
+        user_id=user.id,
+    )
+
+    result = await session.execute(stmt)
+    created_task = result.scalar_one()
+
+    await session.commit()
+
+    return created_task
+
+
+@app.get(
+    "task/load_tasks",
+    tags=['task'],
+    description='Загружает задачи',
+)
+async def load_tasks(
+        user: User = Depends(current_active_user),
+        session: Session = Depends(get_async_session)
+) -> List[TaskResponseModel]:
+    if await check_user_role(user.role_id) not in ['tolk_support', 'tech_support']:
+        raise HTTPException(status_code=404, detail="Only support can load tasks")
+
+    stmt = select(Task)
+    result = await session.execute(stmt)
+    tasks = result.scalars().all()
+
+    return [TaskResponseModel(
+        id=task.id,
+        header=task.header,
+        description=task.description,
+        created_at=task.created_at.isoformat(),
+        user_id=task.user_id,
+        status=task.status,
+        executor_id=task.executor_id,
+    ) for task in tasks]
+
+
+@app.patch(
+    "/task/{task_id}",
+    tags=['task'],
+    description='Изменяет статус задачи'
+)
+async def update_task(
+        task_id: str,
+        task_update: UpdateTaskModel,
+        user: User = Depends(current_active_user),
+        session: Session = Depends(get_async_session)
+) -> TaskResponseModel:
+    if await check_user_role(user.role_id) not in ['tolk_support', 'tech_support']:
+        raise HTTPException(status_code=404, detail="Only support can load tasks")
+
+    stmt = (update(Task).
+            where(Task.id == task_id).
+            values(status=task_update.status).
+            returning(Task))
+    result = await session.execute(stmt)
+
+    updated_task = result.scalar_one()
+
+    if not updated_task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    return updated_task
 
 
 if __name__ == '__main__':
