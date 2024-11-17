@@ -65,7 +65,7 @@ const props: object = defineProps({
             v-if="isSubmit"
             type="submit"
             :class="{
-                btn: true,
+                button: true,
                 ring: ring,
                 processing: processing,
                 full_width: buttonFullWidth,
@@ -79,7 +79,7 @@ const props: object = defineProps({
             v-if="!isSubmit"
             type="button"
             :class="{
-                btn: true,
+                button: true,
                 ring: ring,
                 processing: processing,
                 btn_full_width: buttonFullWidth,
@@ -113,7 +113,7 @@ const props: object = defineProps({
     margin-top: 20px;
 }
 
-.btn {
+.button {
     position: relative;
     display: inline-block;
     padding: 12px 13px;

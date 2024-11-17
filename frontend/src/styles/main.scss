@@ -45,16 +45,14 @@ body {
     }
 
     button {
-        padding: 12px 16px;
-        outline: none;
         border: none;
-        cursor: pointer;
         transition: 0.3s;
         user-select: none;
     }
 
     label {
         user-select: none;
+        color: var(--text-color);
     }
 
     .svg {

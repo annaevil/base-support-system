@@ -418,14 +418,15 @@ onMounted(() => {
         padding: 12px 16px 12px 0px;
     }
     &:focus {
-        border: 1px solid var(--border-color);
+        border: none;
+        box-shadow: 0 0 2px var(--main-color);
         outline: none !important;
         &::placeholder {
             color: transparent;
         }
     }
     &:focus-visible {
-        border: 1px solid var(--border-color);
+        border: none;
         &::placeholder {
             color: var(--main-background-color);
         }
