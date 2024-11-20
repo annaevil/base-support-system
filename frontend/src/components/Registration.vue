@@ -7,6 +7,8 @@ import axios from "axios"
 
 const { toggleVisibility, inputType } = usePasswordVisibility()
 
+const emit = defineEmits(["regSuccsess"])
+
 const regForm = reactive({
   loginReg: "",
   passwordReg: "",
@@ -18,11 +20,6 @@ const latinLetters = helpers.withMessage(
   (value: unknown): value is string =>
     typeof value === "string" && /^[a-zA-Z0-9@._-]*$/.test(value)
 )
-
-// const checkPassword = helpers.withMessage(
-//   "Пароли не совпадают",
-//   () => form.confirmPassword === form.password
-// )
 
 const rules = computed(() => ({
   loginReg: {
@@ -56,12 +53,10 @@ const formSubmitReg = async () => {
         },
       }
     );
-  
-    console.log('Ответ от сервера:', response.data); 
+    emit("regSuccsess")
   }
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      console.error("Ошибка при регистрации:", error.response?.data || error.message);
       alert("Произошла ошибка. Попробуйте еще раз");
     } else {
       console.error("Неизвестная ошибка:", error);

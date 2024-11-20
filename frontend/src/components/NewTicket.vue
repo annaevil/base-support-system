@@ -53,7 +53,10 @@
 </template>
 
 <script setup lang="ts">
+import axios from "axios";
 import { ref } from "vue"
+
+const emit = defineEmits(["success"])
 
 const ticket = ref({
   category: "",
@@ -74,37 +77,35 @@ const handleFileUpload = (event) => {
 }
 
 const submitTicket = async () => {
-  isSubmitting.value = true
+  isSubmitting.value = true;
 
   try {
-    const formData = new FormData()
-    formData.append("category", ticket.value.category)
-    formData.append("description", ticket.value.description)
-    if (file.value) formData.append("attachment", file.value)
+    const response = await axios.post("http://localhost:8888/api/v1/task/create-task",
+    {
+        header: ticket.value.category,
+        description: ticket.value.description,
+      },
+    {
+        headers: {
+          "Content-Type": "application/json",
+          'Authorization': `Bearer ${getAuthToken()}`,
+          Accept: "application/json",
+        },
+        withCredentials: true,
+    })
 
-    setTimeout(() => {
-      submissionStatus.value = {
-        success: true,
-        message: "Ваше обращение успешно отправлено!",
-      }
-      resetForm()
-    }, 1000)
+    console.log('Response:', response.data)
+    emit('success')
+
   } catch (error) {
-    submissionStatus.value = {
-      success: false,
-      message: "Произошла ошибка при отправке обращения. Попробуйте еще раз.",
-    }
+    alert('Произошла ошибка при отправке обращения. Попробуйте еще раз')
+    console.error(error)
   } finally {
     isSubmitting.value = false
   }
-}
+};
 
-const resetForm = () => {
-  ticket.value.category = ""
-  ticket.value.description = ""
-  file.value = null
-  fileName.value = ""
-}
+
 </script>
 
 <style scoped lang="scss">

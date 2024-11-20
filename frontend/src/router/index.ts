@@ -3,6 +3,8 @@ import Auth from '@/views/Auth.vue'
 import HomePage from '@/views/HomePage.vue'
 import NotFound from '@/views/NotFound.vue'
 import Profile from '@/views/Profile.vue'
+import Manager from '@/views/Manager.vue'
+import Specialist from '@/views/Specialist.vue'
 
 const routes = [
     {
@@ -22,6 +24,18 @@ const routes = [
         name: 'Profile',
         component: Profile,
         meta: {title: 'Profile'}
+    },
+    {
+        path: '/manager',
+        name: 'Manager',
+        component: Manager,
+        meta: {title: 'Manager'}
+    },
+    {
+        path: '/specialist',
+        name: 'Specialist',
+        component: Specialist,
+        meta: {title: 'Specialist'}
     },
     {
         path: '/:catchAll(.*)',

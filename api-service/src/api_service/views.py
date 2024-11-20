@@ -21,7 +21,7 @@ from auth.schemas import UserCreate, UserRead, UserUpdate
 from auth.base_config import auth_backend, current_active_user, fastapi_users
 
 origins = [
-    "*"
+    "http://localhost:8084"
 ]
 
 app = FastAPI(
@@ -87,7 +87,7 @@ def protected_route(user: User = Depends(current_active_user)):
 
 
 @app.post(
-    "task/create-task",
+    "/task/create-task",
     tags=['task'],
     description='Метод для создания задчи пользователем',
 
@@ -118,7 +118,7 @@ async def create_task(
 
 
 @app.get(
-    "task/load_tasks",
+    "/task/load_tasks",
     tags=['task'],
     description='Загружает задачи',
 )

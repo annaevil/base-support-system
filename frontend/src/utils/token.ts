@@ -1,6 +1,7 @@
 //add token in cookie
 export function setAuthToken(token: string) {
-    document.cookie = `token=${encodeURIComponent(token)}; path=/; Secure; HttpOnly`
+    document.cookie = `token=${token}; path=/; Secure; HttpOnly`
+    // document.cookie = `token=${data.bearer_token}; path=/; samesite=strict`
 }
 
 //get token

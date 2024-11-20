@@ -5,6 +5,7 @@ import InputControl from "@/components/template/InputControl.vue"
 import SubmitControl from "@/components/template/SubmitControl.vue"
 import Modal from "@/components/template/Modal.vue"
 import NewTicket from "@/components/NewTicket.vue"
+import ExitButton from "@/components/ExitButton.vue"
 
 import { onMounted, reactive, computed, ref } from "vue"
 
@@ -25,8 +26,10 @@ const tabs = computed(() => [
 ])
 
 const tab = ref("profile")
-const userId = 1
+
 const openModal = ref(false)
+const openModalTariff = ref(false)
+const tasks = ref([])
 
 const emit = defineEmits(["update:modelValue", "loaded"])
 
@@ -82,69 +85,23 @@ const toggleAnswer = (index: number): void => {
 
 const v$ = useVuelidate(rules, form)
 
-const loadProfileData = async () => {
-  // try {
-  //     const response = await axios.get(
-  //         `${getOrigin()}/api/v3/users/${userId}/profile`,
-  //         {
-  //             headers: {
-  //                 Authorization: `Bearer ${getAuthToken()}`,
-  //             },
-  //         }
-  //     )
-  //     form.name = response.data.first_name || ''
-  //     form.surname = response.data.last_name || ''
-  //     form.email = response.data.email || ''
-  //     form.phone = response.data.phone || ''
-  //     const userStore = useUserStore()
-  //     userStore.setUserData(
-  //         response.data.first_name,
-  //         response.data.last_name,
-  //         response.data.email
-  //     )
-  // } catch (error) {
-  //     console.error('Ошибка при получении данных профиля:', error)
-  // }
+const saveProfile = () => {
+  localStorage.setItem('name', userStore.name)
+  localStorage.setItem('surname', userStore.surname)
+  localStorage.setItem('email', userStore.email)
+  localStorage.setItem('phone', userStore.phone)
+
+  alert('Данные профиля упешно изменены')
 }
 
-onMounted(() => {
-  loadProfileData()
-})
-
-const saveProfile = async () => {
-  try {
-    const response = await fetch(`/api/v3/users/${userId}/profile`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${getAuthToken()}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: new URLSearchParams({
-        first_name: form.name,
-        last_name: form.surname,
-        email: form.email,
-        phone: form.phone,
-      }),
-    })
-    v$.value.$touch()
-    userStore.setUserData(form.name, form.surname, form.email)
-    if (!v$.value.$invalid) {
-      await handleResponse(response, "Изменения сохранены")
-    } else if (!response.ok) {
-      const errorMessage =
-        response.status === 404
-          ? "Профиль не найден"
-          : "Что-то пошло не так, попробуйте позднее"
-      await handleResponse(response, errorMessage)
-      return
-    }
-  } catch (error) {
-    console.error("Ошибка:", error)
-  }
+const hide = () => {
+  openModal.value = false
 }
+
 </script>
 <template>
   <div class="wrapper">
+    <ExitButton class="exit__btn"/>
     <div class="wrapper__container">
       <div class="sidebar">
         <div class="sidebar__section">
@@ -227,7 +184,7 @@ const saveProfile = async () => {
                   :required="true"
                   :error="v$.name.$error"
                   :errors="v$.$errors"
-                  v-model="v$.name.$model"
+                  v-model="userStore.name"
                 />
                 <InputControl
                   :type="'text'"
@@ -239,7 +196,7 @@ const saveProfile = async () => {
                   :required="true"
                   :error="v$.surname.$error"
                   :errors="v$.$errors"
-                  v-model="v$.surname.$model"
+                  v-model="userStore.surname"
                 />
                 <div class="profile-form__row">
                   <InputControl
@@ -252,7 +209,7 @@ const saveProfile = async () => {
                     :required="true"
                     :error="v$.email.$error"
                     :errors="v$.$errors"
-                    v-model="v$.email.$model"
+                    v-model="userStore.email"
                   />
                   <InputControl
                     :type="'text'"
@@ -266,15 +223,14 @@ const saveProfile = async () => {
                       showMaskOnHover: false,
                     }"
                     :required="false"
-                    v-model="form.phone"
+                    v-model="userStore.phone"
                   />
                 </div>
-
+          
                 <SubmitControl
                   :ring="false"
                   :processing="false"
                   :labelSend="'Сохранить'"
-                  :disabled="v$.$silentErrors.length !== 0"
                   class="profile-form__submit"
                 />
               </form>
@@ -383,13 +339,13 @@ const saveProfile = async () => {
           <div v-show="tab === 'subscription'">
             <h2 class="pb-4">Информация о подписке</h2>
             <div class="subscription-info">
-              <b>Текущий тариф:</b> Стандартный
+              <b>Текущий тариф:</b> Бесплатный
               <div class="subscription-details pt-2">
                 <span>Дата окончания: 30 ноября 2025</span>
               </div>
               <div class="mt-3"><i class="bi bi-info-circle"></i>За месяц до окончания срока, мы напомним вам об оплате. Для большего удобства вы можете подключить автоплатеж. </div>
             </div>
-            <button class="btn btn-secondary mt-5">Изменить тариф</button>
+            <button class="btn btn-secondary mt-5" @click.prevent="openModalTariff = true">Изменить тариф</button>
           </div>
 
           <div v-show="tab === 'faq'">
@@ -421,7 +377,7 @@ const saveProfile = async () => {
         </div>
       </div>
     </div>
-  </div>
+  </div> 
   <Modal
     v-model="openModal"
     :overlayClick="false"
@@ -429,7 +385,41 @@ const saveProfile = async () => {
     :header="'Новое обращение в поддержку'"
   >
     <template #body>
-      <NewTicket />
+      <NewTicket @success="hide"/>
+    </template>
+  </Modal>
+  <Modal
+    v-model="openModalTariff"
+    :overlayClick="false"
+    :showCloseButton="true"
+    :header="''"
+  >
+    <template #body>
+      <div class="tariffs__container">
+        <div class="tariffs__plan tariffs__plan--free">
+          <h3 class="tariffs__plan-title">Бесплатный тариф</h3>
+          <p class="tariffs__plan-price">0 ₽ / месяц</p>
+          <ul class="tariffs__plan-benefits">
+            <li class="tariffs__plan-benefit">До 5 заявок в месяц</li>
+            <li class="tariffs__plan-benefit">Среднее время отклика: 24 часа</li>
+            <li class="tariffs__plan-benefit">Основные функции поддержки</li>
+            <li class="tariffs__plan-benefit">Ограниченная поддержка в чат</li>
+          </ul>
+          <button class="tariffs__plan-btn tariffs__plan-btn--free">Выбрать</button>
+        </div>
+
+        <div class="tariffs__plan tariffs__plan--paid">
+          <h3 class="tariffs__plan-title">Платный тариф</h3>
+          <p class="tariffs__plan-price">500 ₽ / месяц</p>
+          <ul class="tariffs__plan-benefits">
+            <li class="tariffs__plan-benefit">Неограниченное количество заявок</li>
+            <li class="tariffs__plan-benefit">Время отклика: до 1 часа</li>
+            <li class="tariffs__plan-benefit">Приоритетное рассмотрение заявок</li>
+            <li class="tariffs__plan-benefit">Персональный менеджер</li>
+          </ul>
+          <button class="tariffs__plan-btn tariffs__plan-btn--paid">Выбрать</button>
+        </div>
+      </div>
     </template>
   </Modal>
 </template>
@@ -488,7 +478,7 @@ const saveProfile = async () => {
     width: fit-content;
     margin-left: auto;
     margin-right: auto;
-    padding: 13px 37px;
+    padding: 9px 15px;
     background: none;
     color: var(--green-color);
     border: 1px solid var(--green-color);
@@ -527,7 +517,7 @@ const saveProfile = async () => {
   align-items: center;
   justify-content: center;
   color: #fff;
-  font-size: 20px;
+  font-size: 30px;
   margin-right: 20px;
 }
 
@@ -662,5 +652,82 @@ i {
 .bi-info-circle {
 color: var(--text-color);
 font-size: 16px;
+}
+
+.tariffs {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.tariffs__container {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px;
+}
+
+.tariffs__plan {
+  background-color: #f8f9fa;
+  border: 1px solid #ddd;
+  padding: 20px;
+  border-radius: 8px;
+  width: 45%;
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+}
+
+.tariffs__plan-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 15px;
+}
+
+.tariffs__plan-price {
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+.tariffs__plan-benefits {
+  list-style-type: square;
+  padding-left: 55px;
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.tariffs__plan-benefit {
+  font-size: 1rem;
+  margin-bottom: 10px;
+}
+
+.tariffs__plan-btn {
+  padding: 10px 20px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.tariffs__plan-btn--free {
+  background-color: #e0e0e0;
+  color: #555;
+}
+
+.tariffs__plan-btn--paid {
+  background-color: #007bff;
+  color: #fff;
+}
+
+@media (max-width: 768px) {
+  .tariffs__container {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .tariffs__plan {
+    width: 100%;
+  }
 }
 </style>

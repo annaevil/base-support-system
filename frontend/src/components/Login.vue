@@ -50,10 +50,19 @@ const formSubmitLogin = async () => {
       });
 
       if (response.status === 200) {
-        const accessToken = response.data.access_token;
-        setAuthToken(accessToken);
+        console.log('response',response.data.access_token)
+        document.cookie = `token=${response.data.access_token}; path=/; samesite=strict`
+
         console.log("Успешный вход:", response.data);
-        router.push("/")
+        if(form.login === 'user') {
+          router.push("/")
+        } else if (form.login === 'editor') {
+          router.push("/manager")
+        } else if (form.login === 'tech') {
+          router.push("/specialist")
+        } else {
+          router.push("/auth")
+        }
       } else {
         console.error("Ошибка ответа сервера:", response.data);
       }

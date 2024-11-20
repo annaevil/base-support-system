@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 
 const allowedColors = [
     '#FF5733',
@@ -28,40 +28,39 @@ function stringToColor(str: string) {
     return allowedColors[index]
 }
 
-export const useUserStore = defineStore(
-    'user',
-    () => {
-        const name = ref('')
-        const surname = ref('')
-        const email = ref('')
-        const avatarColor = ref('')
-        const initial = ref('')
+export const useUserStore = defineStore('user', () => {
+    const name = ref(localStorage.getItem('name') || 'Константин')
+    const surname = ref(localStorage.getItem('surname') || 'Чернов')
+    const email = ref(localStorage.getItem('email') || 'kost2020@mail.ru')
+    const phone = ref(localStorage.getItem('phone') || '+49529888890')
+    const avatarColor = ref(stringToColor(`${name.value} ${surname.value}`))
+    const initial = ref(name.value.charAt(0).toUpperCase())
 
-        const fullName = computed(() => `${name.value} ${surname.value}`)
+    const fullName = computed(() => `${name.value} ${surname.value}`)
+        localStorage.setItem('name', name.value)
+        localStorage.setItem('surname', surname.value)
+        localStorage.setItem('email', email.value)
+        localStorage.setItem('phone', phone.value)
+        avatarColor.value = stringToColor(`${name.value} ${surname.value}`)
+        initial.value = name.value.charAt(0).toUpperCase()
 
-        const setUserData = (
-            nameValue: string,
-            surnameValue: string,
-            emailValue: string
-        ) => {
-            name.value = nameValue
-            surname.value = surnameValue
-            email.value = emailValue
-            avatarColor.value = stringToColor(`${nameValue} ${surnameValue}`)
-            initial.value = nameValue.charAt(0).toUpperCase()
-        }
-
-        return {
-            name,
-            surname,
-            email,
-            avatarColor,
-            initial,
-            fullName,
-            setUserData
-        }
-    },
-    {
-        persist: true,
+    const setUserData = (nameValue : string, surnameValue : string, emailValue : string, phoneValue : string) => {
+        name.value = nameValue
+        surname.value = surnameValue
+        email.value = emailValue
+        phone.value = phoneValue
+        avatarColor.value = stringToColor(`${nameValue} ${surnameValue}`)
+        initial.value = nameValue.charAt(0).toUpperCase()
     }
-)
+
+    return {
+        name,
+        surname,
+        email,
+        phone,
+        avatarColor,
+        initial,
+        fullName,
+        setUserData
+    }
+})

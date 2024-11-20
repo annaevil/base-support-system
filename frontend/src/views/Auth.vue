@@ -10,11 +10,14 @@ const tabs = ref([
 ])
 
 const tab = ref("entrance")
+
+const regSuccsess = () => {
+  tab.value = "entrance"
+}
 </script>
 <template>
   <div class="wrapper">
     <div class="wrapper__container">
-      <!-- <BackButton /> -->
       <div class="tab__header">
         <button
           v-for="tabItem in tabs"
@@ -29,7 +32,7 @@ const tab = ref("entrance")
         <Login />
       </div>
       <div class="tab__content" v-show="tab === 'registration'">
-        <Registration />
+        <Registration @regSuccsess="regSuccsess"/>
       </div>
     </div>
   </div>
@@ -38,7 +41,7 @@ const tab = ref("entrance")
 .wrapper {
   height: 100vh;
   align-items: center;
-  background: #d0d0d0;
+  background: #494949;
   &__container {
     background: #fff;
     padding: 40px 15px;
@@ -46,6 +49,9 @@ const tab = ref("entrance")
     height: fit-content;
     box-shadow: 0 3px 15px #00000026;
   }
+}
+.tab__header button {
+  padding: 10px 0;
 }
 .registration__title {
   text-align: center;
