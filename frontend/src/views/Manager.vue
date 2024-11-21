@@ -10,6 +10,7 @@ const comment = ref('')
 const selectedTicketId = ref<number | null>(null)
 const tickets = ref([])
 
+const ticketComments = ref({})
 
 const filteredTickets = computed(() => {
   if (selectedFilter.value === 'all') {
@@ -38,20 +39,50 @@ const loadTasks = async () => {
   }
 }
 
-const saveComment = () => {
-  showModal.value = false
-}
-
-const addComment = (ticketId: number) => {
-  showModal.value = true;
+const addComment = (ticketId) => {
+  showModal.value = true
   selectedTicketId.value = ticketId
+  comment.value = ''
 }
 
+const saveComment = () => {
+      const ticketId = selectedTicketId.value
 
-const startProcessing = (ticketId: number) => {
+      if (ticketId && comment.value.trim()) {
+        if (!ticketComments.value[ticketId]) {
+          ticketComments.value[ticketId] = []
+        }
+
+      ticketComments.value[ticketId].push(comment.value.trim())
+        
+      showModal.value = false
+  }
+}
+
+const startProcessing = async (ticketId) => {
   const ticket = tickets.value.find(ticket => ticket.id === ticketId)
   if (ticket) {
-    ticket.status = 'work'
+    ticket.status = 'dev'
+
+    try {
+      const token = getAuthToken() 
+      const response = await axios.patch(
+        `http://localhost:8888/api/v1/task/${ticket.id}`,
+        { status: 'dev' },
+        {
+          headers: {
+            'accept': 'application/json',
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          }
+        }
+      )
+
+      console.log('Статус тикета обновлен успешно:', response.data)
+    } catch (error) {
+      console.error('Ошибка при обновлении статуса тикета:', error)
+      ticket.status = 'new'
+    }
   }
 }
 
@@ -62,7 +93,7 @@ onMounted(() => {
 
 <template>
   <div class="wrapper">
-    <ExitButton class="exit__btn"/>
+    <ExitButton class="exit__btn" />
     <div class="wrapper__container">
       <div class="support-manager-dashboard">
         <div class="avatar">
@@ -79,33 +110,31 @@ onMounted(() => {
             <div class="filter-container">
               <select v-model="selectedFilter" class="form-select mb-3">
                 <option value="all">Все заявки</option>
-                <option value="Ожидает назначения">Ожидает назначения</option>
-                <option value="В обработке">В обработке</option>
-                <option value="Завершено">Завершенные</option>
+                <option value="new">Ожидает назначения</option>
+                <option value="dev">В обработке</option>
+                <option value="success">Завершенные</option>
               </select>
             </div>
           </div>
 
           <div class="tickets-list">
-            <div 
-              class="ticket-card" 
-              v-for="ticket in filteredTickets" 
-              :key="ticket.id" 
-              :data-status="ticket.status"
-            >
+            <div class="ticket-card" v-for="ticket in filteredTickets" :key="ticket.id" :data-status="ticket.status">
               <div class="ticket-info">
                 <p class="ticket-id">Заявка #{{ ticket.id.slice(0, 3) }}</p>
                 <div class="history-item__date pb-3">Дата: {{ new Date(ticket.created_at).toLocaleDateString() }}</div>
-                <p class="fw-bold">Тема: {{ticket.header}}</p>
+                <p class="fw-bold">Тема: {{ ticket.header }}</p>
                 <div class="history-item__title pb-2">Текст обращения: {{ ticket.description }}</div>
                 <p class="ticket-status" :class="ticket.status.toLowerCase()">
-                  Статус: {{ ticket.status }} 
+                  Статус: {{ ticket.status }}
                 </p>
-                <p class="mt-2" v-if="ticket.status === 'Завершено'">Tехнический специалист: <b>Михаил Фролов</b></p>
-                <div v-if="ticket.comments?.length > 0" class="ticket-comments">
-                  <p><strong>Комментарии:</strong></p>
+                <p class="mt-2" v-if="ticket.status === 'success'">Tехнический специалист: <b>Михаил Фролов</b></p>
+
+                <div v-if="ticketComments[ticket.id]?.length">
+                  <h6 class="comment pt-3">Комментарии:</h6>
                   <ul>
-                    <li v-for="(comment, index) in ticket.comments" :key="index">{{ comment }}</li>
+                    <li v-for="(comment, index) in ticketComments[ticket.id]" :key="index">
+                      {{ comment }}
+                    </li>
                   </ul>
                 </div>
               </div>
@@ -118,9 +147,11 @@ onMounted(() => {
                   Назначить
                 </button>
                 <button class="btn btn-comment" v-if="ticket.status !== 'compled'" @click="addComment(ticket.id)">
-                  Комментарий 
+                  Комментарий
                   <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M6.83341 6.83366V11.8337H5.16675V6.83366H0.166748V5.16699H5.16675V0.166992H6.83341V5.16699H11.8334V6.83366H6.83341Z" fill="#000"/>
+                    <path
+                      d="M6.83341 6.83366V11.8337H5.16675V6.83366H0.166748V5.16699H5.16675V0.166992H6.83341V5.16699H11.8334V6.83366H6.83341Z"
+                      fill="#000" />
                   </svg>
                 </button>
               </div>
@@ -134,7 +165,7 @@ onMounted(() => {
             <button @click="saveComment" class="btn btn-primary">Сохранить</button>
           </template>
         </Modal>
-      </div>    
+      </div>
     </div>
   </div>
 </template>
@@ -182,16 +213,16 @@ onMounted(() => {
   color: #28a745;
 }
 
-.ticket-card[data-status="Ожидает назначения"] {
-  background-color: #f2f2f2;
+.ticket-card[data-status="new"] {
+  background-color: #7de5fd25;
 }
 
-.ticket-card[data-status="work"] {
-  background-color: #06ff7d1a;
+.ticket-card[data-status="dev"] {
+  background-color: #eaff061a;
 
 }
 
-.ticket-card[data-status="Завершено"] {
+.ticket-card[data-status="success"] {
   background-color: #bfffce; 
 }
 
@@ -277,5 +308,11 @@ textarea {
 
 .btn-comment {
   background-color: #bbf5c1;
+}
+.comment {
+  color: #ccc;
+}
+ul {
+  color: #ccc;
 }
 </style>

@@ -3,7 +3,6 @@ import { storeToRefs } from "pinia"
 import { useUserStore } from "@/store/userData"
 import InputControl from "@/components/template/InputControl.vue"
 import SubmitControl from "@/components/template/SubmitControl.vue"
-import UserTicketsList from "@/components/UserTicketsList.vue"
 
 import { onMounted, ref, reactive, computed } from "vue"
 

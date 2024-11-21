@@ -1,26 +1,17 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import Modal from "@/components/template/Modal.vue";
+import { ref, computed, onMounted } from 'vue'
+import Modal from "@/components/template/Modal.vue"
 import ExitButton from "@/components/ExitButton.vue"
 
-interface Ticket {
-  id: number;
-  title: string;
-  status: 'Ожидает назначения' | 'В обработке' | 'Завершено';
-  comments: string[];
-}
-
-const tickets = ref<Ticket[]>([
-  { id: 1, title: 'Ошибка в системе', status: 'В обработке', comments: [] },
-  { id: 2, title: 'Не работает кнопка', status: 'В обработке', comments: [] },
-  { id: 3, title: 'Проблемы с сервером', status: 'Завершено', comments: [] }
-]);
+import axios from 'axios'
 
 const selectedFilter = ref('all')
-const showModal = ref(false);
-const comment = ref('');
+const showModal = ref(false)
+const comment = ref('')
 const selectedTicketId = ref<number | null>(null);
+const tickets = ref([])
 
+const ticketComments = ref({})
 
 const filteredTickets = computed(() => {
   if (selectedFilter.value === 'all') {
@@ -29,28 +20,82 @@ const filteredTickets = computed(() => {
   return tickets.value.filter(ticket => ticket.status === selectedFilter.value)
 })
 
-const addComment = (ticketId: number) => {
-  showModal.value = true;
+const addComment = (ticketId) => {
+  showModal.value = true
   selectedTicketId.value = ticketId
+  comment.value = ''
 }
 
 const saveComment = () => {
-  if (selectedTicketId.value !== null) {
-    const ticket = tickets.value.find(ticket => ticket.id === selectedTicketId.value);
-    if (ticket && comment.value) {
-      ticket.comments.push(comment.value)
-      comment.value = ''
-      showModal.value = false
-    }
+    const ticketId = selectedTicketId.value
+
+    if (ticketId && comment.value.trim()) {
+      if (!ticketComments.value[ticketId]) {
+        ticketComments.value[ticketId] = []
+      }
+
+    ticketComments.value[ticketId].push(comment.value.trim())
+        
+    showModal.value = false
   }
-};
+}
 
 const completeTicket = (ticketId: number) => {
   const ticket = tickets.value.find(ticket => ticket.id === ticketId)
   if (ticket) {
-    ticket.status = 'Завершено'
+    ticket.status = 'succes'
   }
 }
+
+const loadTasks = async () => {
+  try {
+    const token = getAuthToken() 
+    const response = await axios.get('http://localhost:8888/api/v1/task/load_tasks', {
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : '',
+        'Accept': 'application/json'
+      },
+      withCredentials: true
+    })
+
+    tickets.value = response.data
+    console.log('Задачи:', tickets.value)
+  } catch (error) {
+    console.error('Ошибка при загрузке задач:', error)
+    alert('Ошибка при загрузке задач. Попробуйте еще раз.')
+  }
+}
+
+const startProcessing = async (ticketId) => {
+  const ticket = tickets.value.find(ticket => ticket.id === ticketId)
+  if (ticket) {
+    ticket.status = 'dev'
+
+    try {
+      const token = getAuthToken() 
+      const response = await axios.patch(
+        `http://localhost:8888/api/v1/task/${ticket.id}`,
+        { status: 'new' },
+        {
+          headers: {
+            'accept': 'application/json',
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          }
+        }
+      )
+
+      console.log('Статус тикета обновлен успешно:', response.data)
+    } catch (error) {
+      console.error('Ошибка при обновлении статуса тикета:', error)
+      ticket.status = 'new'
+    }
+  }
+}
+
+onMounted(() => {
+  loadTasks()
+})
 </script>
 <template>
   <div class="wrapper">
@@ -70,8 +115,9 @@ const completeTicket = (ticketId: number) => {
             <div class="filter-container">
               <select v-model="selectedFilter" class="form-select mb-3">
                 <option value="all">Все заявки</option>
-                <option value="В обработке">В обработке</option>
-                <option value="Завершено">Завершенные</option>
+                <option value="new">Новые</option>
+                <option value="dev">В обработке</option>
+                <option value="success">Завершенные</option>
               </select>
             </div>
           </div>
@@ -82,25 +128,31 @@ const completeTicket = (ticketId: number) => {
               v-for="ticket in filteredTickets" 
               :key="ticket.id" 
               :data-status="ticket.status"
-              :class="{'ticket-processing': ticket.status === 'В обработке', 'ticket-completed': ticket.status === 'Завершено'}"
+              :class="{'ticket-processing': ticket.status === 'dev', 'ticket-completed': ticket.status === 'Завершено'}"
             >
               <div class="ticket-info">
                 <p class="ticket-id">Заявка #{{ ticket.id }}</p>
-                <p class="ticket-title bold">Тема обращения: {{ ticket.title }}</p>
+                <p class="ticket-title bold">Тема обращения: {{ ticket.header }}</p>
+                <p class="mt-3"><b>Текст оращения:</b> {{ ticket.description }}</p>
                 <p class="ticket-status" :class="ticket.status.toLowerCase()">
-                  {{ ticket.status }}
+                  Статус: {{ ticket.status }}
                 </p>
-                <div v-if="ticket.comments.length > 0" class="ticket-comments">
-                  <p><strong>Комментарии:</strong></p>
-                  <ul style="padding-left: 15px;">
-                    <li v-for="(comment, index) in ticket.comments" :key="index">{{ comment }}</li>
+                <div v-if="ticketComments[ticket.id]?.length">
+                  <h6 class="comment pt-3">Комментарии:</h6>
+                  <ul>
+                    <li v-for="(comment, index) in ticketComments[ticket.id]" :key="index">
+                      {{ comment }}
+                    </li>
                   </ul>
                 </div>
               </div>
       
               <div class="ticket-actions">
+                <button class="btn btn-primary" v-if="ticket.status === 'new'" @click="startProcessing(ticket.id)">
+                  Взять в работу
+                </button>
                 <button 
-                  v-if="ticket.status === 'В обработке'" 
+                  v-if="ticket.status === 'dev'" 
                   class="btn btn-success" 
                   @click="completeTicket(ticket.id)"
                 >
@@ -214,5 +266,25 @@ textarea {
       font-size: 14px;
     }
   }
+}
+
+.ticket-card[data-status="new"] {
+  background-color: #7de5fd25;
+}
+
+.ticket-card[data-status="dev"] {
+  background-color: #eaff061a;
+
+}
+
+.ticket-card[data-status="success"] {
+  background-color: #bfffce; 
+}
+
+.comment {
+  color: #ccc;
+}
+ul {
+  color: #ccc;
 }
 </style>
