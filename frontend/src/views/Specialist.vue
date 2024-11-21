@@ -69,26 +69,41 @@ const loadTasks = async () => {
 const startProcessing = async (ticketId) => {
   const ticket = tickets.value.find(ticket => ticket.id === ticketId)
   if (ticket) {
-    ticket.status = 'dev'
+    let newStatus = ''
+    
+    if (ticket.status === 'new') {
+      newStatus = 'dev'
+    } else if (ticket.status === 'dev') {
+      newStatus = 'success'
+    }
 
-    try {
-      const token = getAuthToken() 
-      const response = await axios.patch(
-        `http://localhost:8888/api/v1/task/${ticket.id}`,
-        { status: 'new' },
-        {
-          headers: {
-            'accept': 'application/json',
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
+    if (newStatus) {
+      ticket.status = newStatus
+
+      try {
+        const token = getAuthToken()
+        const response = await axios.patch(
+          `http://localhost:8888/api/v1/task/${ticket.id}`,
+          { status: newStatus },
+          {
+            headers: {
+              'accept': 'application/json',
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
           }
-        }
-      )
+        )
 
-      console.log('Статус тикета обновлен успешно:', response.data)
-    } catch (error) {
-      console.error('Ошибка при обновлении статуса тикета:', error)
-      ticket.status = 'new'
+        console.log('Статус тикета обновлен успешно:', response.data)
+      } catch (error) {
+        console.error('Ошибка при обновлении статуса тикета:', error)
+        
+        if (ticket.status === 'dev') {
+          ticket.status = 'new'
+        } else if (ticket.status === 'success') {
+          ticket.status = 'dev'
+        }
+      }
     }
   }
 }
