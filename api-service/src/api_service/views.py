@@ -163,6 +163,7 @@ async def update_task(
             values(status=task_update.status).
             returning(Task))
     result = await session.execute(stmt)
+    await session.commit()
 
     updated_task = result.scalar_one()
 
